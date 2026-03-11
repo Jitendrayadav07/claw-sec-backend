@@ -5,6 +5,8 @@ const cors = require("cors");
 const sequelize = require("./config/db");
 const routes = require("./routes");
 const { swaggerUi, swaggerSpec } = require("./config/swagger");
+require("./passport"); // registers Google strategy
+const passport = require("passport");
 
 const app = express();
 
@@ -21,6 +23,9 @@ sequelize
 // Sync models with the database
 sequelize.sync();
 
+app.use(passport.initialize());
+// No passport.session() - we use JWT in the Google callback, not sessions
+
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(
@@ -36,6 +41,9 @@ app.use(
 
 // API Routes
 app.use("/api", routes);
+
+// Static files (HTML page for testing Google login)
+app.use(express.static("public"));
 
 // Swagger API Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
