@@ -1,5 +1,4 @@
 const { DataTypes } = require("sequelize");
-const crypto = require("crypto");
 const sequelize = require("../config/db");
 
 const User = sequelize.define(
@@ -34,12 +33,7 @@ const User = sequelize.define(
   {
     tableName: "users",
     timestamps: true,
-    indexes: [
-      {
-        unique: true,
-        fields: ["email"],
-      },
-    ],
+    indexes: [{ unique: true, fields: ["email"] }],
   }
 );
 

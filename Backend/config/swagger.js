@@ -15,6 +15,16 @@ const options = {
         description: "Development server",
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "JWT from login or register",
+        },
+      },
+    },
   },
   apis: ["./routes/*.js"],
 };

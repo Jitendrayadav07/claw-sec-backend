@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const UserAccess = require("../models/UserAccess");
 const Response = require("../classes/Response");
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config/jwtTokenKey");
@@ -75,10 +76,15 @@ const login = async (req, res) => {
     }
     
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "24h" });
-    user.token = token;
+    const userResponse = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      token,
+    };
     return res
       .status(200)
-      .send(Response.sendResponse(true, { user }, "User logged in successfully", 200));
+      .send(Response.sendResponse(true, { user: userResponse }, "User logged in successfully", 200));
   } catch (error) {
     return res
       .status(500)
@@ -86,7 +92,41 @@ const login = async (req, res) => {
   }
 };
 
+const getAccessTokenAndCredits = async (req, res) => {
+  try {
+    let userAccess = await UserAccess.findOne({
+      where: { user_id: req.user.id },
+    });
+    if (!userAccess) {
+      const credits = parseInt(process.env.DEFAULT_CREDITS, 10) || 10;
+      userAccess = await UserAccess.create({
+        user_id: req.user.id,
+        credits,
+      });
+    }
+    const payload = Response.sendResponse(
+      true,
+      {
+        user_id: req.user.id,
+        email: req.user.email,
+        name: req.user.name,
+        accessToken: userAccess.accessKey,
+        credits: userAccess.credits,
+      },
+      "Success",
+      200
+    );
+    return res.status(200).send(payload);
+  } catch (err) {
+    console.error("getAccessTokenAndCredits error:", err);
+    return res
+      .status(500)
+      .send(Response.sendResponse(false, null, err.message || "Failed to get access token and credits", 500));
+  }
+};
+
 module.exports = {
   register,
   login,
+  getAccessTokenAndCredits,
 };

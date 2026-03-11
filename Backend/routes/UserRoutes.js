@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const UserController = require("../controllers/UserController");
 const JoiMiddleWare = require("../middlewares/joi/joiMiddleware");
+const verifyToken = require("../middlewares/verifyToken");
 const userValidation = require("../validations/userValidation");
 
 /**
@@ -87,4 +88,7 @@ router.post("/register", JoiMiddleWare(userValidation.registerSchema, "body"), U
  *         description: Server error
  */
 router.post("/login", JoiMiddleWare(userValidation.loginSchema, "body"), UserController.login);
+
+router.get("/access-token-credits", verifyToken, UserController.getAccessTokenAndCredits);
+
 module.exports = router;
