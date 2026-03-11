@@ -12,16 +12,18 @@ router.get(
 );
 
 router.get("/google/callback", (req, res, next) => {
-  const baseUrl = process.env.REDIRECT_URL || "http://localhost:5001";
-  const loginPage = `${baseUrl}/google-login.html`;
+  // Redirect to React frontend so it can store token and redirect to dashboard
+  const frontendUrl = process.env.FRONTEND_URL || process.env.REDIRECT_URL || "http://localhost:5173";
+  const successRedirect = `${frontendUrl}/auth/callback`;
+  const errorRedirect = `${frontendUrl}/login`;
 
   passport.authenticate("google", { session: false }, async (err, profile, info) => {
     if (err) {
-      return res.redirect(`${loginPage}?error=${encodeURIComponent(err.message || "Google login failed.")}`);
+      return res.redirect(`${errorRedirect}?error=${encodeURIComponent(err.message || "Google login failed.")}`);
     }
     if (!profile) {
       const message = (info && info.message) || "Google login failed.";
-      return res.redirect(`${loginPage}?error=${encodeURIComponent(message)}`);
+      return res.redirect(`${errorRedirect}?error=${encodeURIComponent(message)}`);
     }
 
     try {
@@ -48,13 +50,17 @@ router.get("/google/callback", (req, res, next) => {
         JWT_SECRET,
         { expiresIn: "24h" }
       );
-      return res.redirect(
-        `${loginPage}?token=${encodeURIComponent(token)}&name=${encodeURIComponent(user.name)}&email=${encodeURIComponent(user.email)}`
-      );
+      const params = new URLSearchParams({
+        token,
+        name: user.name || "",
+        email: user.email || "",
+        id: user.id,
+      });
+      return res.redirect(`${successRedirect}?${params.toString()}`);
     } catch (dbErr) {
       console.error("Google callback error:", dbErr);
       return res.redirect(
-        `${loginPage}?error=${encodeURIComponent(dbErr.message || "Something went wrong.")}`
+        `${errorRedirect}?error=${encodeURIComponent(dbErr.message || "Something went wrong.")}`
       );
     }
   })(req, res, next);
